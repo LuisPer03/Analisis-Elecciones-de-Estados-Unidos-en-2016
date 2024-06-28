@@ -151,3 +151,378 @@ Nota: Hecho a partir de los datos en Hamner (2019)
 
 Los estados con Mayor diferencia entre sus Ingresos, se refiere a aquellos Estados los cuales poseen la mayoria de sus ingresos por encima de la media, de los Sueldos de Estados Unidos, y a su vez poseen un alto indice de Pobreza a comparacion, en el grafico se aprecia que la mayoria de los Estados exceptuando, Virginia, Washington y Utah, votaron por los Candidatos de los Partidos Democratas en su mayoria, demostrando que el sistema economico utilizados en esos estados deja conforme a la mayoria de su poblacion, aunque de estos estados tambein se puede demostrar que una gran parte de su poblacion, esta descontenta con como las cosas se han manejado, y por eso dieron su eleccion a el partido que traia el cambio,
 Pero se puede concluir que el Partido que deja un estado con altos ingresos, y un indice de pobreza un poco "alto" en Estados Unidos, permite la conformidad por lo tanto una buena oportunidad de ser reelegido, por ultimo La mayoria de los votantes con ingresos familiares más bajos se asocian con el Partido Demócrata, mientras que unos pocos se afilian al Partido Republicano. Segun Pew Research Center **"Alrededor de seis de cada diez votantes con ingresos familiares más bajos (58%) se asocian con el Partido Demócrata, en comparación con el 36% que se afilian al Partido Republicano."**
+### Objetivo 2: Evaluar las preferencias de partido de los votantes en los estados de mayor población de electores en los Estados Unidos.
+
+```{r beto,echo=FALSE}
+query <- "SELECT 
+    state AS Estado, 
+    party AS Partido, 
+    SUM(votes) as Total_Votos
+  FROM primary_results
+  WHERE state IN ('California','New York','Florida','North Carolina','Texas','Ohio','Pennsylvania','Illinois','Georgia','Massachusetts','Michigan')
+  GROUP BY state, party 
+  ORDER BY votes DESC;"
+DfVotosporEstado <- dbGetQuery(con, query)
+query2 <- "SELECT 
+    state AS Estado, 
+    SUM(votes) as Total_Votos
+  FROM primary_results
+  WHERE state IN ('California','New York','Florida','North Carolina','Texas','Ohio','Pennsylvania','Illinois','Georgia','Massachusetts','Michigan')
+  GROUP BY state
+  ORDER BY Total_Votos DESC;"
+DfVotosporEstadoSuma <- dbGetQuery(con,query2)
+
+```
+
+Como podremos notar en el siguiente gráfico. Se selecciono a las 11 estados con mayor número de electores de los Estados Unidos, en los cuales 6 de los estados siendo Texas, Ohio, North Carolina, Michigan, Georgia y Florida hubo una preferencia hacia el partido Republicano; y el resto de los estados siendo Pennsylvania, New York, Massachussetts, Illinois y California tuvieron preferencia por el partido Democrata. A la vez que podremos notar que en los estados de Texas y California hubo la preferencia maxima del partido Republicano y el partido Democrata respectivamente.
+
+## Resultados
+
+```{r, echo=FALSE}
+ kable(DfVotosporEstadoSuma)
+
+ggplot(DfVotosporEstado, aes(y = Estado, x = Total_Votos, fill = Partido)) +
+  geom_col(position = "dodge")+
+  labs(x = "Votos totales", y = "Estado", fill = "Partido", title = "Preferencia de los votantes, dado el estado con mayor numero de electores") +
+  scale_x_continuous(labels = scales::comma) +  scale_fill_manual(values = c("Republican" = "red", "Democrat" = "blue"))+theme_minimal()
+
+
+```
+
+```{r prext,echo=FALSE}
+queryextratab <- "SELECT state_facts.area_name AS 'Estado', state_facts.INC110213 AS 'Ingreso'
+FROM state_facts
+JOIN state_primary_result ON state_facts.fips = state_primary_result.fips
+  AND state_facts.area_name <> 'Colorado'
+  GROUP BY state_facts.area_name
+  ORDER BY state_facts.INC110213 DESC
+LIMIT 10;"
+tablaextra <- dbGetQuery(con, queryextratab)
+
+```
+
+### Objetivo 3: Investigar el impacto de la situación socioeconómica en la votación de los candidatos presidenciales en los estados con mayores desigualdades económicas durante las elecciones de 2016.
+
+##Grafico de dispersión
+```{r prex, echo=FALSE}
+queryextra <-"SELECT state_facts.area_name, state_primary_result.party, state_primary_result.Votos_Totales, state_facts.INC110213
+FROM state_facts
+JOIN state_primary_result ON state_facts.fips = state_primary_result.fips
+  AND state_facts.area_name <> 'Colorado'
+  ORDER BY state_facts.INC110213 DESC
+LIMIT 20;"
+
+graficoextra <- dbGetQuery(con, queryextra)
+kable(tablaextra) 
+  ggplot(graficoextra, aes(x = Votos_Totales, y = area_name, colour = party)) +
+  geom_point() +
+  labs(x = "Votos de los Estados", y = "Estados", title = "Votos de los Estados ", colour = "Partido") +
+  scale_color_manual(values = c("blue", "red"))+scale_x_continuous(labels = scales::comma)+theme_minimal()
+
+  
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+La relación entre los estados con mayores ingresos y su inclinación hacia el partido vigente puede variar según el contexto y el país. En Estados Unidos, entre los votantes de ingresos más altos, mas de la mitad se identifica como demócrata o simpatizante demócrata, mientras que pocos se inclina hacia el partido republicano. Sin embargo, es importante señalar que esta relación puede variar según la educación y otros factores socioeconómicos. En general, los estados con mayores ingresos pueden tener una mayor proporción de votantes que apoyan al partido en el poder, pero esto no es una regla universal y puede depender de múltiples factores.
+
+
+
+## Antecedentes
+
+Según PEW research (2014) en el "Religious Landscape Study" encontró que a medida que más ganan las personas el porcentaje de personas que se identifican como democratas se mantiene constante.
+
+## Modelo de regresión lineal
+
+Este modelo se va a enfocar en la relación entre el número de votos por estado para los democratas en las elecciones primarias en estados unidos y la mediana de ingresos por hogar de los estados.
+
+**Analisis descriptivo**
+
+Estadísticas descriptivas de las variables mediana de ingresos por hogar y número de votos por estado para los democratas.
+
+```{r estadísticas desc, echo=FALSE}
+DatosDescriptivos <- c("Media","Desviación estándar", "Mediana","Moda","Asimetría","Kurtosis")
+
+ingresos <- dem_unidos$INC110213
+votos <- dem_unidos$Votos_Totales
+
+#Moda y asimetria vienen de un paquete llamado desctools
+
+ValoresDescriptivosing <- c(mean(ingresos),sd(ingresos), 
+                            median(ingresos),Mode(ingresos), Skew(ingresos),
+                            kurtosis(ingresos))
+
+ValoresDescriptivosvotos <- c(mean(votos),sd(votos), 
+                            median(votos), Mode(votos), Skew(votos), 
+                            kurtosis(votos))
+
+ValoresRedondeadosing <- round(ValoresDescriptivosing, digits = 2)
+ValoresRedondeadosvotos <- round(ValoresDescriptivosvotos, digits = 2)
+
+Valoresingresos <- ValoresRedondeadosing
+Valoresvotos <- ValoresRedondeadosvotos
+
+DatosDescDF <- data.frame(DatosDescriptivos, Valoresingresos, Valoresvotos)
+
+kable(DatosDescDF)
+```
+
+Nota:En la tabla anterior se detallan algunas estadísticas descriptivas de las variables. (Hamner, 2019)
+
+## Análisis de las estadísticas descriptivas
+
+##### Mediana de los ingresos por hogar
+
+Se observa que en promedio la mediana de los ingresos por hogar en los estados en los que se registraron votos para los demócratas es 53150.57 dólares, la mediana tiene un valor de 51672 dólares lo que significa que el 50% de los datos se encuentran por debajo de ella y el otro 50% se encuentra por encima de ella, tiene una desviación estándar de 8728.17 dólares esto quiere decir que la mediana de los ingresos por hogar lo que quiere decir que varía con respecto al promedio 8728.17 dólares, por otra parte es de interés que los datos no tiene moda, es decir que en los valores no existe ningún valor que se repita más que el resto, además también se observa que es asimétrica positiva con un valor de 0.65 lo que significa que es marcadamente asimétrica y la kurtosis es de 2.65 que es platicúrtica.
+
+##### Número de votos por estado para los democratas
+
+En promedio el número de votos por estado es de 564500.02 votos con una desviación estándar de 683953.99 votos y una mediana de 313392 votos, esto quiere decir que el 50% de los votos se encuentran por debajo de este valor, no posee una moda, se observa una asimetría de 1.92 lo cual significa que es positiva y marcadamente asimétrica y finalmente la kurtosis es superior a 3 por lo que se puede decir que para esta variable los datos se distribuyen leptokurticos.
+
+## Análisis de regresión lineal bivariante
+
+Se define para la investigación en desarrollo
+
+X: Mediana de ingresos por hogar y estado
+
+Y: Número de votos por estado para los democratas
+
+Gráfico de dispersión de la mediana de los ingresos por hogar con el número de votos por estado
+
+```{r pressure, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(dem_unidos, aes(x = INC110213, y = Votos_Totales)) + geom_point(color = "#0044C9") + 
+  geom_smooth(method = "lm", col = "red")+ xlab(
+    "Mediana de ingresos por hogar ($)")+ ylab("Número de votos") +
+  scale_y_continuous(labels = scales::comma_format())+ theme_minimal()
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+Estimación puntual de los coeficientes de regresión B~0~ y B~1~
+
+ŷ = Ḃ~0~+ Ḃ~1~x
+
+según el modelo de regresión lineal
+
+Tabla de coeficientes de regresión
+
+```{r tabla coef, echo=FALSE}
+kable(summary(m_dem)$coefficients, format = "markdown", align = "c")
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)\
+lo que implica que ŷ = 39377.97 + 9.88x
+
+#### Interpretación de los coeficientes B~0~ y B~1~
+
+B~0~ es el valor promedio del número de votos cuando la mediana de los ingresos por hogar es constante.
+
+B~1~ es la razón de cambio que mide la variación promedio en la mediana de los ingresos por hogar por número de votos.
+
+##### Estimación puntual de un valor utilizando el modelo de regresión lineal e intervalo de confianza para $\mu$~yx~
+
+útilizando x = 56797 dolares (valor asociado a Illinois)
+
+Se obtiene que:
+
+ŷ = 39377.97 + 9.88(56797)
+
+ŷ = 39377.97 + 561154.36
+
+ŷ = 600532.33 votos esperados para los democratas en el estado de Illinois
+
+Tabla de intervalos del 95% confianza para $\mu$~yx~
+
+```{r echo=FALSE}
+x_pred <- data.frame(INC110213 = 56797)
+prediccion <- predict(m_dem, newdata = x_pred, interval = 'confidence', level = 0.95)
+
+colnames(prediccion) <- c("valor esperado", "inferior", "superior")
+kable(prediccion)
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+Como se puede observar con un nivel de confianza del 95% se espera que el verdadero valor de $\mu$~yx~ cuando x vale 56797 dolares es entre 386632.9 votos y 814419.9 votos.
+
+Sin embargo el verdadero valor de los votos recibido por los democratas en el estado de Illinois fue 1987834
+
+**Estimación y análisis del coeficiente de determinación**
+
+Tabla Del coeficiente de determinación
+
+```{r echo=FALSE}
+tabla_metricas <- data.frame(
+  R_cuadrado = summary(m_dem)$r.squared,
+  R_cuadrado_ajustado = summary(m_dem)$adj.r.squared,
+  error_residual = summary(m_dem)$sigma
+)
+
+kable(tabla_metricas)
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+R^2^ = 1.6%
+
+Esto quiere decir que la variable Número de votos para los democratas en las primarias de los Estados Unidos es explicada en un 1.6% por la mediana de los ingresos por hogar por estado.
+
+Es decir que el 98.4% de las veces no pueden ser explicado por el modelo planteado.
+
+**Contraste de hipotesis de significación conjunta**
+
+Tabla anova
+
+```{r echo=FALSE}
+kable(anova(m_dem))
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+1.B~0~: Coeficiente de regresión constante B~1~: Pendiente de la recta de regresión
+
+2 H~0~: B~0~=B~1~=0 H~1~: B~0~ $\neq$ B~1~ $\neq$ 0\
+3. Nivel de significación: $\alpha$=0.05\
+4. Estadístico de contraste: F\* = 0.759\
+5. Regla de decisión:\
+Se rechaza H~0~ sii:\
+F\* \> F~k-1;n-k;1-~$\alpha$\
+F~k-1;n-k;1-~$\alpha$= F~1;47;0.95~= 4,047\
+K: Número de coeficientes de regresión, incluido el término constante.\
+n: Tamaño de la muestra.
+
+6.  Conclusión: Ya que el estadístico de contraste no pertenece a la región crítica entonces se rechaza H~0~ con un nivel de significación del 5% por lo que se concluye que no hay suficientes elementos estadísticos para concluir que ambos coeficientes son distintos de 0.
+
+**Estimación de los coeficientes de regresión de** $\mu$~yx~
+
+1.B~0~: Coeficiente de regresión constante\
+2. Hipótesis H~0~: B~0~=0 H~1~: B~0~ $\neq$ 0\
+3. Nivel de significación: $\alpha$=0.05\
+4. Estadístico de contraste: Z\* = 0.0645 (Por ser n\>=30)\
+5. Regla de decisión:\
+Se rechaza Ho sii
+
+Z\* \< Z$\alpha$/2 V Z\* \> Z~1-~$\alpha$/2
+
+Z~1-~$\alpha$/2 = 1.96 Z$\alpha$/2 = -1.96
+
+6.Conclusión: Con un nivel de significación de 5% no hay suficientes elementos estadísticos para rechazar que B~0~ es distinto de 0 es decir que se asume que la constante de regresión es 0.
+
+#### Contraste de hipótesis para la Contraste de hipótesis para la pendiente de la recta de regresión
+
+1.B~1~: Pendiente de la recta de regresión\
+2. Hipótesis H~0~: B~1~=0 H~1~: B~1~ $\neq$ 0\
+3. Nivel de significación: $\alpha$=0.05\
+4. Estadístico de contraste: Z\* = 0.8713 (Por ser n\>=30)\
+5. Regla de decisión: Se rechaza H~0~ sii
+
+Z\* \< Z$\alpha$/2 V Z\* \> Z\~1-$\alpha$/2 Z1-$\alpha$/2\~ = 1.96 Z$\alpha$/2 = -1.96
+
+6.  Conclusión: Con un nivel de significación del 5% no hay suficientes elementos estadísticos para rechazar que B~1~ es distinto de 0.
+
+Por lo se concluye que no se cumple el principio de linealidad y las variables mediana
+
+Como no se cumple el supuesto de linealidad ni para B~0~ ni B~1~ se asume que las variables Mediana de los ingresos por hogar y votos para los democratas en las primarias de Estados Unidos no tienen relación
+
+## Conclusiones
+
+Al finalizar esta investigación se llega a la conclusión de que las variables no poseen una relación lineal y se recomienda investigar con metodos estadísticos más avanzados o tomar en cuenta factores distintos para explicar el comportamiento del número de votos por estado para los democratas
+
+## Supuesto de independencia
+
+Prueba Durbin-Watson
+
+```{r echo=FALSE}
+p_dw_dem <- dwtest(m_dem, alternative="two.sided",iterations = 49)
+prueba_dw <- p_dw_dem$statistic
+df_dw <- data.frame("Prueba_Durbin-Watson" = prueba_dw)
+kable(df_dw, format = "markdown")
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+En la tabla anterior se observa la prueba Durbin-Watson la cual explica si los residuos poseen auto correlación entre si, se obtiene que es 2.212 y se obtiene a traves del siguiente contraste de hipotesis que.\
+X: residuos estandarizados\
+H~0~: no existe autocorrelación entre los residuos (independientes)\
+H~1~: existe autocorrelación entre los residuos\
+D = 2.212 0 \< D \< 4\
+Se rechaza Ho sii: D $\neq$ 2
+
+Por lo que entonces ya que 2.12 es un valor cercano a 2 por lo que no se tienen elementos suficientes para rechazar que no existe autocorrelación entre los residuos por tanto se concluye que los residuos son auto independientes.
+
+## Prueba de normalidad
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(df_residuos, aes(x = Residuos)) +
+  geom_histogram(aes(y = ..density..), color = "black", fill = "#0044C9") +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1), 
+                color = "black", size = 1) +
+  labs(title = "Histograma de Residuos Estandarizados con Curva Normal",
+       x = "Residuos Estandarizados",
+       y = "Densidad") +
+  theme_minimal()
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+```{r echo=FALSE, warning=FALSE}
+ ggplot(df_residuos, aes(sample = Residuos)) +
+  geom_qq(color = "#0044C9") +
+  geom_abline(intercept = 0, slope = 1, color = "black") +
+  labs(title = "QQ Plot de Residuos Estandarizados",
+       x = "Cuantiles teóricos",
+       y = "Cuantiles observados") +
+  theme_minimal()
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+```{r echo=FALSE}
+pnorm_dem <-ks.test(restandar_dem,"pnorm")
+tabla_resultados <- kable(
+  data.frame(
+    Estadístico = pnorm_dem$statistic,
+    Valor_p = pnorm_dem$p.value
+  ),
+  caption = "Resultados de la prueba de Kolmogorov-Smirnov"
+)
+tabla_resultados
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+A partir del siguiente contraste de hipotesis se obtiene que\
+X: Residuos estandarizados\
+H~0~: residuos se distribuyen como una normal\
+H~1~: residuos no se distribuyen como una normal\
+$\alpha$ = 0,05\
+Debido a que n\> 30 se va a utilizar la prueba Kolmogorov-Smirnov\
+P-valor = 0,0877\
+Se rechaza Ho sii: P-valor \< $\alpha$
+
+Ya que el P-valor es es mayor a el nivel de significación se llega a la conclusión que los residuos para el modelo planteado se ajustan a una distribución normal.
+
+## Conclusiones
+
+Este estudio, se enfocó en analizar como la situación socioeconómica en Estados Unidos, específicamente, medida a través de los ingresos registrados en los condados y estados durante el año 2016 influyo en las tendencias políticas de los votantes y como esto afecto finalmente el resultado a nivel nacional. Para finalizar este estudio se tomo una muestra de 11 estados con mayor población de votantes para visualizar sus preferencias nos dio como resultado que 6 de ellos tuvieron tendencia hacia el partido Republicano y los 5 restante hacia el partido Demócrata. Sin embargo, es importante aclarar que en los estados con mayores ingresos los demócratas tienen mas ventajas.
+
+Según el análisis realizado, no se encontró evidencia de una relación lineal significativa entre las variables estudiadas. Esto puede indicar que otros tipos de análisis podrían ser mas apropiados para explicar el comportamiento del numero de votos para los demócratas y que no hay relación entre este fenómeno socioeconómico y las tendencias políticas de votación. \newpage
+
+```{=tex}
+\begin{large}
+\begin{center}
+
+\textbf{Bibliografía}
+
+\end{center}
+\end{large}
+```
+> DNC. (n.d.). Where we stand. Democrats.org. Obtenido el junio 27, 2024, de <https://democrats.org/where-we-stand/>
+
+> Pew Research Center (2024).Inicio Temas de Investigación Política y Políticas Elecciones y Votantes en Estados Unidos Votantes y Votantes Votantes y Votación Demografía de Votantes. Pew Research Center. <https://www.pewresearch.org/politics/2024/04/09/partisanship-by-family-income-home-ownership-union-membership-and-veteran-status/>
+
+> Hamner, B. (2019). 2016 US Election. Kaggle. Obtenido el 26 de junio 2024, de <https://www.kaggle.com/datasets/benhamner/2016-us-election>
+
+> PEW Research Center. (2014). Party affiliation by household income - Religion in America: U.S. Religious Data, Demographics and Statistics. Pew Research Center. Obtenido el 26 de junio 2024, de <https://www.pewresearch.org/religious-landscape-study/database/compare/party-affiliation/by/income-distribution/>
+
+> United States Census Bureau. (n.d.). United States Census Bureau. Census.gov. Obtenido el junio 27, 2024,de <https://www.census.gov/>
