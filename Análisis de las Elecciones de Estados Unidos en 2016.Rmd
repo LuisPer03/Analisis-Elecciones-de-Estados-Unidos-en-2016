@@ -107,3 +107,47 @@ Es pertinente para el lector conocer conceptos correspondientes a esta investiga
 -   Votos Recibidos: En esta variable, se mide la cantidad de votos recibidos en base al candidato y su respectivo partido. Siendo esta, una variable cuantitativa discreta.
 
 Ahora bien. A todas estas variables expuestas, se realizara un análisis estadístico para para dar respuesta al planteamiento antes expuesto, y lograr dar respuesta a los objetivos específicos planteados, para conocer la situación referente a ese momento de proceso electoral para la elección del Presidente de los Estados Unidos.
+### Objetivo 1: Investigar el impacto de la situación socioeconómica en la votación de los partidos politicos en los estados con mayores desigualdades económicas durante las elecciones de 2016.
+
+```{r tablapre2,echo=FALSE}
+tabgra2 <- "SELECT state_facts.area_name AS 'Estado',state_facts.PVY020213 AS 'Indice de Pobreza'
+FROM state_facts
+JOIN state_primary_result ON state_facts.fips = state_primary_result.fips
+WHERE state_facts.INC110213 > 58000
+  AND state_facts.area_name <> 'Colorado'
+  GROUP BY state_facts.area_name
+ORDER BY state_facts.PVY020213 DESC
+LIMIT 10;"
+tabla2 <- dbGetQuery(con,tabgra2)
+
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+Votos Resultantes, Basado en la Situacion Socio-Economica de Los Estados con Ingresos Superiores, y mas alto Indice de Pobreza.
+
+
+```{r Gra2, echo=FALSE}
+VotosIsPa <- "SELECT state_facts.area_name, state_primary_result.party, state_primary_result.Votos_Totales, state_facts.INC110213, state_facts.PVY020213
+FROM state_facts
+JOIN state_primary_result ON state_facts.fips = state_primary_result.fips
+WHERE state_facts.INC110213 > 58000
+  AND state_facts.area_name <> 'Colorado'
+ORDER BY state_facts.PVY020213 DESC, state_facts.INC110213
+LIMIT 20;"
+INgA <- dbGetQuery(con,VotosIsPa)
+
+ kable(tabla2) 
+ ggplot(INgA, aes(x = area_name, y = Votos_Totales, fill = party)) +
+  geom_col(width = 1) +
+  coord_polar() + labs(x = "Estados", y = "Votos Segun los Partidos", title = "Votos de Los Estados con Mayor Diferencia de Ingreso", fill = 'Partido') +scale_y_continuous(labels = scales::comma) + 
+  scale_fill_manual(values = c("blue", "red"))+theme_minimal()
+
+
+  
+```
+
+Nota: Hecho a partir de los datos en Hamner (2019)
+
+Los estados con Mayor diferencia entre sus Ingresos, se refiere a aquellos Estados los cuales poseen la mayoria de sus ingresos por encima de la media, de los Sueldos de Estados Unidos, y a su vez poseen un alto indice de Pobreza a comparacion, en el grafico se aprecia que la mayoria de los Estados exceptuando, Virginia, Washington y Utah, votaron por los Candidatos de los Partidos Democratas en su mayoria, demostrando que el sistema economico utilizados en esos estados deja conforme a la mayoria de su poblacion, aunque de estos estados tambein se puede demostrar que una gran parte de su poblacion, esta descontenta con como las cosas se han manejado, y por eso dieron su eleccion a el partido que traia el cambio,
+Pero se puede concluir que el Partido que deja un estado con altos ingresos, y un indice de pobreza un poco "alto" en Estados Unidos, permite la conformidad por lo tanto una buena oportunidad de ser reelegido, por ultimo La mayoria de los votantes con ingresos familiares más bajos se asocian con el Partido Demócrata, mientras que unos pocos se afilian al Partido Republicano. Segun Pew Research Center **"Alrededor de seis de cada diez votantes con ingresos familiares más bajos (58%) se asocian con el Partido Demócrata, en comparación con el 36% que se afilian al Partido Republicano."**
