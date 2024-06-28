@@ -1,0 +1,8 @@
+---
+title: "Análisis de las Elecciones de Estados Unidos en 2016"
+author: "Carvajal Alberto - Figuera Arturo - Mosqueda Michelle - Pereira Luis"
+date: "2024-06-17"
+output:
+  pdf_document: default
+---
+
