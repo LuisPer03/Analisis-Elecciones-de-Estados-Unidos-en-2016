@@ -6,3 +6,80 @@ output:
   pdf_document: default
 ---
 
+```{r Librerias, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(tidyverse)
+library(rmarkdown)
+library(DBI)
+library(RSQLite)
+library(writexl)
+library(GGally)
+library(scatterplot3d)
+library(plotly)
+library(tables)
+library(cowplot)
+library(lmtest)
+library(DescTools)
+library(moments)
+library(tinytex)
+con <- dbConnect(RSQLite::SQLite(), dbname = "database.sqlite" )
+tablas <- dbListTables(con)
+print(con)
+
+```
+
+```{r setup-modelo-reg-lineal, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+s_p_results <- dbReadTable(con, "state_primary_result")
+s_facts <- dbReadTable(con, "state_facts")
+
+filtro_dem <- s_p_results %>% filter(party == "Democrat")
+
+dem_unidos <- s_facts %>% inner_join(filtro_dem, by = "fips")
+
+m_dem <- lm(Votos_Totales ~ INC110213, data = dem_unidos)
+restandar_dem <- rstandard(m_dem)
+df_residuos <- data.frame(Residuos = restandar_dem)
+
+```
+
+## Contexto:
+
+La economía de Estados Unidos se ha destacado como una de las más sólidas en el mundo. Sin embargo, esto no significa que no tenga fallos, esta sufre de desigualdades que afectan a las personas más vulnerables. Utilizando las elecciones, estas personas pueden elegir el candidato que beneficie a su economía local. Los dos partidos, Republicano y Demócrata presentan propuestas que reflejan las preferencias de los votantes. El año de referencia de este estudio es el 2016, se va a analizar la calidad de vida de los habitantes de los condados, usando los ingresos registrados. Con el fin de comprender cómo la situación socioeconómica influyó en la decisión de voto y los resultados electorales.
+
+## Planteamiento del Problema:
+
+En este estudio, se enfocará en analizar cómo la situación socioeconómica en Estados Unidos, específicamente, medida a través de los ingresos registrados en los condados y estados durante el año 2016, influyó en las tendencias políticas de los votantes y cómo esto afectó finalmente al resultado a nivel nacional.
+
+## Preguntas de investigación:
+
+-   ¿Cuál fue el impacto de la situación socioeconómica en la votación de los candidatos presidenciales en los estados con mayores desigualdades económicas durante las elecciones de 2016?
+
+-   ¿Cuál fue la diferencia en las preferencias electorales entre los votantes en los estados con mayor población de electores?
+
+-   ¿Cómo se relaciona la situación socioeconómica de los estados, medida por la mediana de los ingresos por hogar, con los resultados electorales y las preferencias hacia los partidos Republicano y Demócrata en las elecciones presidenciales de 2016?
+
+## Objetivos de la investigación:
+
+### Objetivo general:
+
+Analizar cómo la situación socioeconómica en Estados Unidos, medida a través de los ingresos registrados en los estados durante el año 2016, influyó en las tendencias políticas de los votantes y cómo esto afectó finalmente al resultado a nivel nacional en las elecciones presidenciales de 2016.
+
+### Objetivos específicos:
+
+-   Investigar el impacto de la situación socioeconómica en la votación de los candidatos presidenciales en los estados con mayores desigualdades económicas durante las elecciones de 2016.
+-   Evaluar las preferencias de partido de los votantes en los estados de mayor población de electores en los Estados Unidos.
+-   Examinar la relación entre la situación socioeconómica de los estados, medida por los ingresos promedio, y los resultados electorales en las elecciones presidenciales de 2016.
+
+## Introducción:
+
+Estados Unidos, una de las grandes potencias del mundo actual, reconocido como una de las economías más robustas a nivel global; presenta sin embargo, una serie de desigualdades que afectan de manera significativa a los sectores más vulnerables de la sociedad. Estas desigualdades, reflejadas en la distribución de ingresos y la calidad de vida de los habitantes, pueden tener un impacto considerable en las decisiones políticas y, en particular, en los resultados electorales. La idea de este proyecto tiene como objetivo, analizar como la situación socioeconómica en los estados y sus condados de Estados Unidos durante el año 2016 pudo haber influido en la decisión de votos de los ciudadanos. Para ello, se tomarán en cuenta los ingresos registrados en cada condado y se examinará su posible relación con los resultados electorales obtenidos.
+
+El proceso electoral en Estados Unidos es uno de los más seguidos y comentados a nivel mundial debido a la relevancia que tiene este país en la escena internacional. Cada cuatro años, el mundo se detiene para observar la elección presidencial y las implicaciones que esta tendrá sobre la política y economía mundial.
+
+Los dos principales partidos políticos del país, el Republicano y el Demócrata, presentan propuestas que reflejan las preferencias de los votantes. A través de las elecciones, los ciudadanos tienen la oportunidad de elegir al candidato que consideren que beneficiará más a su economía local.
+
+El estudio de estos factores y su influencia en las elecciones puede proporcionar una visión más profunda de las dinámicas políticas y económicas en Estados Unidos. Este análisis no solo puede ayudar a entender el pasado, sino que también puede ofrecer valiosas lecciones para futuras elecciones y políticas públicas.
