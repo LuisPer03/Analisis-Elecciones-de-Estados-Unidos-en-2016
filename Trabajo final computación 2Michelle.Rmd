@@ -1,0 +1,16 @@
+---
+title: "Análisis de las Elecciones de Estados Unidos en 2016"
+author: "Carvajal Alberto - Figuera Arturo - Mosqueda Michelle - Pereira Luis"
+date: "2024-06-17"
+output:
+  pdf_document: default
+---
+## Resumen  
+
+El objetivo de este informe es analizar como la situación socioeconómica en los condados de Estados Unidos pudo haber influido en las elecciones presidenciales del año 2016. Se utilizarán gráficos que serán de gran ayuda para visualizar como la situación socioeconómica de los condados pudo haber contribuido a la hora del ciudadano tomar la decisión de ejercer su voto por uno de los dos partidos (Demócratas, Republicanos). Crearemos un histograma circular de los votos en los estados con mayor desigualdad económica: esto permitirá visualizar de manera sencilla la distribución de los votos en los estados donde la desigualdad económica es más pronunciada, usaremos un histograma de columnas sobre la preferencia de los electores en los estados con mayor población de electores: esta visualización ayudara a identificar tendencias en la preferencia de los votantes en los estados con mayor población electoral, posteriormente observaremos un modelo de regresión lineal enfocada en la relación entre el número de votos por estado para los demócratas en las elecciones primarias de estados unidos y la mediana de ingresos por hogar de los estados esta incluye: la ecuación de regresión lineal que mostrara la relación matemática entre el número de votos para los demócratas y la mediana de ingresos por hogar, coeficientes de regresión lineal que indicaran la dirección y fuerza de la relación entre la variable de la mediana de ingresos y los votos demócratas, análisis de la significación estadística y el valor p de la regresión para determinar si la relación entre los votos demócratas y la mediana de ingresos por hogar es estadísticamente significativa. La situación socioeconómica jugo un papel decisivo en la elección presidencial del año 2016. Los análisis demuestran que factores como la desigualdad económica influyo significativamente en las decisiones de los votantes.
+
+## Conclusiones  
+
+Este estudio, se enfocó en analizar como la situación socioeconómica en Estados Unidos, específicamente, medida a través de los ingresos registrados en los condados y estados durante el año 2016 influyo en las tendencias políticas de los votantes y como esto afecto finalmente el resultado a nivel nacional. Para finalizar este estudio se tomo una muestra de 11 estados con mayor población de votantes para visualizar sus preferencias nos dio como resultado que 6 de ellos tuvieron tendencia hacia el partido Republicano y los 5 restante hacia el partido Demócrata. Sin embargo, es importante aclarar que en los estados con mayores ingresos los demócratas tienen mas ventajas.  
+
+Según el análisis realizado, no se encontró evidencia de una relación lineal significativa entre las variables estudiadas. Esto puede indicar que otros tipos de análisis podrían ser mas apropiados para explicar el comportamiento del numero de votos para los demócratas y que no hay relación entre este fenómeno socioeconómico y las tendencias políticas de votación.
